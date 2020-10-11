@@ -12,7 +12,8 @@ std::string get_datetime_csv(){
 }
 
 int main() {
-    InternalTempSensor it_sensor;
+    InternalTempSensor it_sensor("/dev/i2c-1");
+
     for(int i = 0; i < 10; ++i){
         std::cout << "Heey " << it_sensor.get_next() << std::endl;
         usleep(1e5);

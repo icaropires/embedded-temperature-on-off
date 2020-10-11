@@ -2,18 +2,16 @@
 
 #include <iostream>
 
-InternalTempSensor::InternalTempSensor() : dev_path("/dev/i2c-1") {
+InternalTempSensor::InternalTempSensor(const std::string& dev_path) : dev_path(dev_path) {
 
     if ((id.fd = open(dev_path.c_str(), O_RDWR)) < 0) {
-        fprintf(stderr, "Failed to open the i2c bus %s\n", dev_path.c_str());
-        exit(1);
+        throw std::invalid_argument("Failed to open the i2c bus " + dev_path);
     }
 
     id.dev_addr = BME280_I2C_ADDR_PRIM;
 
     if (ioctl(id.fd, I2C_SLAVE, id.dev_addr) < 0) {
-        fprintf(stderr, "Failed to acquire bus access and/or talk to slave.\n");
-        exit(1);
+        throw std::runtime_error("Failed to acquire bus access and/or talk to slave");
     }
 
     dev.intf = BME280_I2C_INTF;
@@ -25,8 +23,7 @@ InternalTempSensor::InternalTempSensor() : dev_path("/dev/i2c-1") {
 
     int8_t result = bme280_init(&dev);
     if (result != BME280_OK) {
-        fprintf(stderr, "Failed to initialize the device (code %+d).\n", result);
-        exit(1);
+        throw std::runtime_error("Failed to initialize the device. Error code = " + result);
     }
 
     setup();
@@ -39,15 +36,14 @@ InternalTempSensor::~InternalTempSensor() {
 float InternalTempSensor::get_next() {
     int8_t result = bme280_set_sensor_mode(BME280_FORCED_MODE, &dev);
     if (result != BME280_OK) {
-        fprintf(stderr, "Failed to set sensor mode (code %+d).", result);
-        exit(1);
+        throw std::runtime_error("Failed to set sensor mode. Error code =" + result);
     }
 
     struct bme280_data data;
 
     result = bme280_get_sensor_data(BME280_ALL, &data, &dev);
     if (result != BME280_OK){
-        fprintf(stderr, "Failed to get sensor data (code %+d).", result);
+        throw std::runtime_error("Failed to get sensor data. Error code =" + result);
     }
 
     float temp = -1.0;
@@ -77,14 +73,13 @@ void InternalTempSensor::setup() {
     // Set the sensor settings
     int8_t result = bme280_set_sensor_settings(settings_sel, &dev);
     if (result != BME280_OK) {
-        fprintf(stderr, "Failed to set sensor settings (code %+d).", result);
-        exit(1);
+        // TODO: Custom exception class
+        throw std::runtime_error( "Failed to set sensor settings. Error code = " + result);
     }
 
     result = bme280_set_sensor_mode(BME280_FORCED_MODE, &dev);
     if (result != BME280_OK) {
-        fprintf(stderr, "Failed to set sensor mode (code %+d).", result);
-        exit(1);
+        throw std::runtime_error("Failed to set sensor mode. Error code = " + result);
     }
 
     uint32_t delay = 4e4;  // If less, it gives always 22.1504
