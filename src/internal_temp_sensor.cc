@@ -73,7 +73,6 @@ void InternalTempSensor::setup() {
     // Set the sensor settings
     int8_t result = bme280_set_sensor_settings(settings_sel, &dev);
     if (result != BME280_OK) {
-        // TODO: Custom exception class
         throw std::runtime_error( "Failed to set sensor settings. Error code = " + result);
     }
 
