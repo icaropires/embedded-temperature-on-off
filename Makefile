@@ -1,3 +1,4 @@
+CC = gcc
 CXX = g++
 
 CFLAGS = -c -pedantic-errors -Wall -Wextra -Werror
@@ -28,11 +29,11 @@ print-%  : ; @echo $* = $($*)
 
 $(BIN): $(OBJS)
 	@mkdir -p $(@D)
-	$(CC) $(LDFLAGS) $(OBJ_DIR)/*.o -o $@ 
+	$(CXX) $(LDFLAGS) $(OBJ_DIR)/*.o -o $@ 
 
 $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cc $(OBJ_DIR)/bme280.o
 	@mkdir -p $(@D)
-	$(CC) $(CXXFLAGS) $< -o $@
+	$(CXX) $(CXXFLAGS) $< -o $@
 
 $(OBJ_DIR)/bme280.o: $(BME280_LIB)/bme280.c
 	@mkdir -p $(@D)
