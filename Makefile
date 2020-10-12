@@ -2,7 +2,7 @@ CC = gcc
 CXX = g++
 
 CFLAGS = -c -pedantic-errors -Wall -Wextra -Werror
-CFLAGS += -I $(INC_DIR) -I $(BME280_LIB)
+CFLAGS += -I $(INC_DIR) -I $(BME280_LIB) -I $(DISPLAY_LIB)
 
 CXXFLAGS = $(CFLAGS) -std=c++11 
 
@@ -19,6 +19,7 @@ SRCS = $(wildcard $(SRC_DIR)/*.cc)
 OBJS = $(patsubst $(SRC_DIR)/%.cc, $(OBJ_DIR)/%.o, $(SRCS))
 
 BME280_LIB = $(LIBS_DIR)/BME280_driver
+DISPLAY_LIB = $(LIBS_DIR)/display
 
 BIN = $(BIN_DIR)/bin
 
@@ -31,11 +32,15 @@ $(BIN): $(OBJS)
 	@mkdir -p $(@D)
 	$(CXX) $(LDFLAGS) $(OBJ_DIR)/*.o -o $@ 
 
-$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cc $(OBJ_DIR)/bme280.o
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cc $(OBJ_DIR)/bme280.o $(OBJ_DIR)/display.o
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 $(OBJ_DIR)/bme280.o: $(BME280_LIB)/bme280.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/display.o: $(DISPLAY_LIB)/display.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $< -o $@
 
