@@ -2,11 +2,11 @@ CC = gcc
 CXX = g++
 
 CFLAGS = -c -pedantic-errors -Wall -Wextra -Werror
-CFLAGS += -I $(INC_DIR) -I $(BME280_LIB) -I $(DISPLAY_LIB)
+CFLAGS += -I $(INC_DIR) -I $(BME280_LIB) -I $(DISPLAY_LIB) -I $(BCM2835_LIB)
 
 CXXFLAGS = $(CFLAGS) -std=c++11 
 
-LDFLAGS = -lwiringPi #-lbcm2835
+LDFLAGS = -l wiringPi -l bcm2835
 BUILD_DIR = .
 
 INC_DIR = $(BUILD_DIR)/inc
@@ -20,6 +20,7 @@ OBJS = $(patsubst $(SRC_DIR)/%.cc, $(OBJ_DIR)/%.o, $(SRCS))
 
 BME280_LIB = $(LIBS_DIR)/BME280_driver
 DISPLAY_LIB = $(LIBS_DIR)/display
+BCM2835_LIB = $(LIBS_DIR)/bcm2835
 
 BIN = $(BIN_DIR)/bin
 
@@ -30,7 +31,7 @@ print-%  : ; @echo $* = $($*)
 
 $(BIN): $(OBJS)
 	@mkdir -p $(@D)
-	$(CXX) $(LDFLAGS) $(OBJ_DIR)/*.o -o $@ 
+	$(CXX) $(OBJ_DIR)/*.o -o $@ $(LDFLAGS) 
 
 $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cc $(OBJ_DIR)/bme280.o $(OBJ_DIR)/display.o
 	@mkdir -p $(@D)
