@@ -22,7 +22,7 @@ class GPIOActuator {
 
     ~GPIOActuator();
 
-    void turn_on();
+    void turn_on() const;
 
-    void turn_off();
+    void turn_off() const;
 };

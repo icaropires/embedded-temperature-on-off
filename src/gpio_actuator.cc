@@ -16,10 +16,10 @@ GPIOActuator::~GPIOActuator() {
     bcm2835_close();
 }
 
-void GPIOActuator::turn_on() {
+void GPIOActuator::turn_on() const {
     bcm2835_gpio_write(pin, static_cast<uint8_t>(Cmd::On));
 }
 
-void GPIOActuator::turn_off() {
+void GPIOActuator::turn_off() const {
     bcm2835_gpio_write(pin, static_cast<uint8_t>(Cmd::Off));
 }

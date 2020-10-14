@@ -1,6 +1,6 @@
 #include "display_monitor.h"
 
-DisplayMonitor::DisplayMonitor(const int& i2c_addr): i2c_addr(i2c_addr) {
+DisplayMonitor::DisplayMonitor(int i2c_addr): i2c_addr(i2c_addr) {
     wiringPiSetup();  // It doesn't return error code anymore: http://wiringpi.com/reference/setup/
 
     fd = wiringPiI2CSetup(i2c_addr);
@@ -18,7 +18,7 @@ DisplayMonitor::~DisplayMonitor() {
     close(fd);
 }
 
-void DisplayMonitor::print(const std::string& first_line, const std::string& second_line){
+void DisplayMonitor::print(const std::string& first_line, const std::string& second_line) const {
     lcdLoc(fd, LINE1);
     typeln(fd, first_line.c_str());
 
@@ -26,13 +26,13 @@ void DisplayMonitor::print(const std::string& first_line, const std::string& sec
     typeln(fd, second_line.c_str()); 
 }
 
-void DisplayMonitor::print_temps(const float& internal_temp, const float& external_temp, const float& reference_temp){
+void DisplayMonitor::print_temps(float internal_temp, float reference_temp, float external_temp) const {
     char line[LINE_SIZE];
 
     sprintf(line, "TI:%0.1f TR:%0.1f", internal_temp, reference_temp);
     std::string first_line(line);
 
-    sprintf(line, "TR: %0.2f", external_temp);
+    sprintf(line, "TE: %0.2f", external_temp);
     std::string second_line(line);
 
     print(first_line, second_line);

@@ -4,10 +4,10 @@
 
 #define DATA_SIZE 4
 
-class TempInputUART : public UARTSensor {
+class InputTempSensor : public UARTSensor {
 
  public:
-    TempInputUART(const std::string& device_path);
+    InputTempSensor(const std::string& device_path);
 
     float get_next();
 };

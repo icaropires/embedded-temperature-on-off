@@ -1,46 +1,40 @@
 #include <iostream>
 
-#include "internal_temp_sensor.h"
-#include "external_temp_sensor.h"
-#include "input_temp_sensor.h"
-#include "display_monitor.h"
-#include "gpio_actuator.h"
+#include <unistd.h>
 
-std::string get_datetime_csv(){
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
+#include "control.h"
 
-    char result[64];//TODO: is it this size?
-    strftime(result, sizeof(tm), "%F,%T", &tm);
 
-    return std::string(result);
+// std::string get_datetime_csv(){
+//     time_t t = time(NULL);
+//     struct tm tm = *localtime(&t);
+// 
+//     char result[64];//TODO: is it this size?
+//     strftime(result, sizeof(tm), "%F,%T", &tm);
+// 
+//     return std::string(result);
+// }
+
+// params: sensor_ti, sensor_tr, sensor_te, display_monitor, cooler, resistor
+Control control("/dev/serial0", "/dev/serial0", "/dev/i2c-1", 0x27, 24, 23);
+
+void finish_handler(int) {
+    control.stop();
+}
+
+void scheduler(int) {
+    control.schedule();
 }
 
 int main() {
-    ExternalTempSensor te_sensor("/dev/i2c-1");
-    InternalTempSensor ti_sensor("/dev/serial0");
-    TempInputUART temp_input_uart("/dev/serial0");
+    signal(SIGINT, finish_handler);
+    signal(SIGTERM, finish_handler);
+    signal(SIGALRM, scheduler);
+    ualarm(1, 5e5);
 
-    DisplayMonitor display_monitor(0x27);
-    GPIOActuator cooler(24);
-    GPIOActuator resistor(23);
+    control.start();
 
-    for(int i = 0; i < 1000000; ++i){
-        // float ti_temp = ti_sensor.get_next();
-        // float te_temp = te_sensor.get_next();
-        // float tr_temp = temp_input_uart.get_next();
-
-        // std::cout << "TE " << te_temp << std::endl;
-        // std::cout << "TI " << ti_temp << std::endl;
-        // std::cout << "TR " << tr_temp << std::endl;
-
-        // display_monitor.print_temps(ti_temp, te_temp, tr_temp);
-        cooler.turn_on();
-        resistor.turn_off();
-        usleep(1e6);
-        cooler.turn_off();
-        resistor.turn_on();
-    }
+    std::cout << "Finished controlling the system" << std::endl;
 
     return 0;
 }

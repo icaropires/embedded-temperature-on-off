@@ -18,11 +18,11 @@ class DisplayMonitor {
     int i2c_addr;
 
  public:
-    DisplayMonitor(const int& i2c_addr);
+    DisplayMonitor(int i2c_addr);
 
     ~DisplayMonitor();
 
-    void print(const std::string& first_line, const std::string& second_line);
+    void print(const std::string& first_line, const std::string& second_line) const;
 
-    void print_temps(const float& internal_temp, const float& external_temp, const float& reference_temp);
+    void print_temps(float internal_temp, float external_temp, float reference_temp) const;
 };
