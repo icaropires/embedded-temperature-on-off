@@ -28,7 +28,6 @@ void UARTSensor::setup(){
 
 ssize_t UARTSensor::write_code(char code){
     char cmd[] = {code, 9, 8, 1, 5};
-    tcflush(serial, TCIFLUSH);
     ssize_t count = write(serial, &cmd, sizeof(cmd));
 
     if (count < 0) {

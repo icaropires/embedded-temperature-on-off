@@ -20,6 +20,9 @@ class Control {
     /*
      * Class to control the specified system: https://gitlab.com/fse_fga/projetos/projeto-1
      *
+     * Assuming that tr and te sensors are connected through UART at the same bus. They
+     *   will be synchronized together
+     *
      * Abbreviations:
      * ti: internal temperature
      * te: external temperature
@@ -36,7 +39,9 @@ class Control {
     float current_ti, current_te, current_tr;
 
     std::atomic<bool> do_stop, has_started;
+
     std::condition_variable cv_update_temperatures;
+    std::mutex mutex_ti, mutex_te_tr;
 
  public:
     Control(const std::string &sensor_ti_addr, const std::string &sensor_tr_addr,
@@ -52,9 +57,10 @@ class Control {
  private:
     bool ask_use_potentiometer();
 
-    void update_temperature(float& current_temperature, Sensor &sensor, std::mutex& mutex);
+    void update_ti();
+    void update_te_tr(bool update_tr);
 
-    void stdin_tr(std::mutex& mutex);
+    void stdin_tr(bool activate, std::mutex& mutex);
 
     void control();
 };
