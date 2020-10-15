@@ -22,6 +22,8 @@ class DisplayMonitor {
 
     ~DisplayMonitor();
 
+    void clear() const;
+
     void print(const std::string& first_line, const std::string& second_line) const;
 
     void print_temps(float internal_temp, float external_temp, float reference_temp) const;

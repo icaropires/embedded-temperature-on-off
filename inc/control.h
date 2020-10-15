@@ -6,10 +6,12 @@
 #include <mutex>
 #include <condition_variable>
 #include <csignal>
+#include <stdexcept>
 
 #include <unistd.h>
 
 #include "sensor.h"
+#include "ui.h"
 #include "internal_temp_sensor.h"
 #include "external_temp_sensor.h"
 #include "input_temp_sensor.h"
@@ -36,12 +38,15 @@ class Control {
     GPIOActuator cooler;
     GPIOActuator resistor;
 
-    float current_ti, current_te, current_tr;
+    UI ui;
+
+    float current_ti = 23, current_te = 23, current_tr = 23;
+    float hysteresis = 4;
 
     std::atomic<bool> do_stop, has_started;
 
     std::condition_variable cv_update_temperatures;
-    std::mutex mutex_ti, mutex_te_tr;
+    std::mutex mutex_ti, mutex_te_tr, mutex_display;
 
  public:
     Control(const std::string &sensor_ti_addr, const std::string &sensor_tr_addr,
@@ -55,12 +60,12 @@ class Control {
     void schedule();
 
  private:
-    bool ask_use_potentiometer();
+    bool ask_use_potentiometer() const;
+    float ask_hysteresis() const;
 
+    void update_display();
     void update_ti();
     void update_te_tr(bool update_tr);
 
-    void stdin_tr(bool activate, std::mutex& mutex);
-
-    void control();
+    void apply();
 };

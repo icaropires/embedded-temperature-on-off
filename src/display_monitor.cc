@@ -14,8 +14,12 @@ DisplayMonitor::DisplayMonitor(int i2c_addr): i2c_addr(i2c_addr) {
 }
 
 DisplayMonitor::~DisplayMonitor() {
-    clrLcd(fd);
+    clear();
     close(fd);
+}
+
+void DisplayMonitor::clear() const {
+    clrLcd(fd);
 }
 
 void DisplayMonitor::print(const std::string& first_line, const std::string& second_line) const {

@@ -34,7 +34,5 @@ int main() {
 
     control.start();
 
-    std::cout << "Finished controlling the system" << std::endl;
-
     return 0;
 }
