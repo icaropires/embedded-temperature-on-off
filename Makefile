@@ -46,7 +46,7 @@ $(OBJ_DIR)/display.o: $(DISPLAY_LIB)/display.c
 	$(CC) $(CFLAGS) $< -o $@
 
 run:
-	$(BIN)
+	@ $(BIN) 2> errors.log
 
 clean:
 	@rm -rf $(OBJ_DIR) $(BIN_DIR)
