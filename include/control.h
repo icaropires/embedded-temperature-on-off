@@ -25,7 +25,7 @@ class Control {
     /*
      * Class to control the specified system: https://gitlab.com/fse_fga/projetos/projeto-1
      *
-     * Assuming that tr and te sensors are connected through UART at the same bus. They
+     * Assuming that tr and ti sensors are connected through UART at the same bus. They
      *   will be synchronized together
      *
      * Abbreviations:
@@ -48,8 +48,9 @@ class Control {
 
     std::atomic<bool> do_stop, has_started;
 
-    std::condition_variable cv_update_temperatures, cv_csv;
-    std::mutex mutex_ti, mutex_te_tr, mutex_display, mutex_csv;
+    // cv_general for loops which follow same period
+    std::condition_variable cv_general, cv_csv;
+    std::mutex mutex_ti, mutex_te, mutex_tr, mutex_display, mutex_csv, mutex_apply;
 
     std::string csv_file;
     unsigned int save_csv_counter = 0;
@@ -72,10 +73,9 @@ class Control {
     void create_csv();
     std::string get_datetime_csv();
 
-    void update_csv();
-    void update_display();
-    void update_ti();
-    void update_te_tr(bool update_tr);
-
-    void apply();
+    void update_csv_loop();
+    void update_display_loop();
+    void update_te_loop();
+    void update_ti_tr_loop(bool update_tr);
+    void apply_loop();
 };

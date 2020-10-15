@@ -1,9 +1,9 @@
 #include "ui.h"
 
-UI::UI(float& current_ti, float& current_tr, float& current_te, std::mutex& mutex_ti, std::mutex& mutex_te_tr) 
+UI::UI(float& current_ti, float& current_tr, float& current_te, std::mutex& mutex_ti, std::mutex& mutex_tr, std::mutex& mutex_te) 
     : do_stop(false),
     current_ti(current_ti), current_tr(current_tr), current_te(current_te),
-    mutex_ti(mutex_ti), mutex_te_tr(mutex_te_tr)
+    mutex_ti(mutex_ti), mutex_tr(mutex_tr), mutex_te(mutex_te)
 {}
 
 UI::~UI() {}
@@ -74,10 +74,13 @@ void UI::update_input() {
             std::lock_guard<std::mutex> lock(mutex_ui);
 
             if (!failed) {
-                std::lock_guard<std::mutex> lock(mutex_te_tr);
+                float old = -1;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_tr);
 
-                float old = current_tr;
-                current_tr = temperature;
+                    old = current_tr;
+                    current_tr = temperature;
+                }
 
                 wattron(input_window, COLOR_PAIR(success_color_id)); 
                 mvwprintw(input_window, 1, 0, "Reference temperature updated: %0.2f -> %0.2f!", old, temperature);
@@ -125,7 +128,7 @@ void UI::update_output() {
         std::unique_lock<std::mutex> lock_ui(mutex_ui);
 
         {
-            std::lock_guard<std::mutex> lock_ti(mutex_ti), lock_te_tr(mutex_te_tr);
+            std::lock_guard<std::mutex> lock_ti(mutex_ti), lock_tr(mutex_tr), lock_te(mutex_te);
 
             wprintw(output_window, "TE: %0.2f; TI: %0.2f -> TR: %0.2f\n", current_te, current_ti, current_tr);
             wrefresh(output_window);

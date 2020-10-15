@@ -6,7 +6,7 @@ Control::Control(const std::string &sensor_ti_addr, const std::string &sensor_tr
 : sensor_ti(sensor_ti_addr), sensor_tr(sensor_tr_addr),
   sensor_te(sensor_te_addr), display_monitor(display_monitor_addr),
   cooler(cooler_addr), resistor(resistor_addr),
-  ui(current_ti, current_tr, current_te, mutex_ti, mutex_te_tr),
+  ui(current_ti, current_tr, current_te, mutex_ti, mutex_tr, mutex_te),
   do_stop(false), has_started(false), csv_file(csv_file)
 {
 }
@@ -30,14 +30,16 @@ void Control::start() {
 
     has_started = true;
 
-    std::thread t_ti(&Control::update_ti, this);
-    std::thread t_te_tr(&Control::update_te_tr, this, use_potentiometer);
+    std::thread t_ti(&Control::update_te_loop, this);
+    std::thread t_ti_tr(&Control::update_ti_tr_loop, this, use_potentiometer);
     std::thread t_ui (&UI::start, std::ref(ui), !use_potentiometer);
-    std::thread t_display(&Control::update_display, this);
+    std::thread t_display(&Control::update_display_loop, this);
+    std::thread t_csv_file(&Control::update_csv_loop, this);
 
     t_ti.join();
-    t_te_tr.join();
+    t_ti_tr.join();
     t_ui.join();
+    t_csv_file.join();
 }
 
 bool Control::ask_use_potentiometer() const {
@@ -85,51 +87,51 @@ void Control::schedule() {
         save_csv_counter = 0;
     }
 
-    apply();
     ui.print_out();
-    cv_update_temperatures.notify_all();  // Start updating all temperatures at same time
+    cv_general.notify_all();  // Start updating all temperatures at same time
 }
 
-void Control::update_display() {
+void Control::update_display_loop() {
     std::unique_lock<std::mutex> lock_display(mutex_display); 
 
     while (!do_stop) {
         {
-            std::lock_guard<std::mutex> lock_ti(mutex_ti), lock_te_tr(mutex_te_tr);
+            std::lock_guard<std::mutex> lock_ti(mutex_ti), lock_tr(mutex_tr), lock_te(mutex_te);
             display_monitor.print_temps(current_ti, current_tr, current_te);
         }
 
-        cv_update_temperatures.wait(lock_display);
+        cv_general.wait(lock_display);
     }
 }
 
-void Control::update_ti() {
-    std::unique_lock<std::mutex> lock(mutex_ti); 
-
-    while (!do_stop) {
-        try {
-            current_ti = sensor_ti.get_next();
-        } catch (std::runtime_error& e) {
-            std::cerr << "Error when getting data: " << e.what() << std::endl;
-        }
-        cv_update_temperatures.wait(lock);
-    }
-}
-
-void Control::update_te_tr(bool update_tr) {
-    std::unique_lock<std::mutex> lock(mutex_te_tr); 
+void Control::update_te_loop() {
+    std::unique_lock<std::mutex> lock(mutex_te); 
 
     while (!do_stop) {
         try {
             current_te = sensor_te.get_next();
+        } catch (std::runtime_error& e) {
+            std::cerr << "Error when getting data: " << e.what() << std::endl;
+        }
+        cv_general.wait(lock);
+    }
+}
+
+void Control::update_ti_tr_loop(bool update_tr) {
+    std::unique_lock<std::mutex> lock_ti(mutex_ti); 
+
+    while (!do_stop) {
+        try {
+            current_ti = sensor_ti.get_next();
 
             if (update_tr) {
+                std::lock_guard<std::mutex> lock_tr(mutex_tr);
                 current_tr = sensor_tr.get_next();
             }
         } catch (std::runtime_error& e) {
             std::cerr << "Error when getting data: " << e.what() << std::endl;
         }
-        cv_update_temperatures.wait(lock);
+        cv_general.wait(lock_ti);
     }
 }
 
@@ -150,7 +152,7 @@ void Control::create_csv() {
     s_csv_file.close();
 }
 
-void Control::update_csv() {
+void Control::update_csv_loop() {
     std::unique_lock<std::mutex> lock(mutex_csv);
 
     while (!do_stop) {
@@ -166,26 +168,30 @@ void Control::update_csv() {
     }
 }
 
-void Control::apply() {
-    float tr_aux = -1;
-    {
-        std::lock_guard<std::mutex> lock(mutex_te_tr);
-        tr_aux = current_tr;
-    }
+void Control::apply_loop() {
+    while (!do_stop) {
+        std::unique_lock<std::mutex> lock_apply(mutex_apply);
 
-    float upper = tr_aux + hysteresis / 2;
-    float lower = tr_aux - hysteresis / 2;
+        float tr_aux = -1, ti_aux = -1;
+        {
+            // Reading safe
+            std::lock_guard<std::mutex> lock_tr(mutex_tr), lock_ti(mutex_ti);
+            tr_aux = current_tr;
+            ti_aux = current_ti;
+        }
 
-    {
-        std::lock_guard<std::mutex> lock(mutex_ti);
+        float upper = tr_aux + hysteresis / 2;
+        float lower = tr_aux - hysteresis / 2;
 
-        if (current_ti < lower) {
+        if (ti_aux < lower) {
             cooler.turn_off();
             resistor.turn_on();
 
-        } else if(current_ti > upper) {
+        } else if(ti_aux > upper) {
             cooler.turn_on();
             resistor.turn_off();
         }
+
+        cv_general.wait(lock_apply);
     }
 }

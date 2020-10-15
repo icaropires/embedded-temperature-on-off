@@ -19,7 +19,7 @@ class UI {
     int title_pad = 2, left_pad = 1, top_pad = 1, windows_pad = 5;
 
     float &current_ti, &current_tr, &current_te;
-    std::mutex &mutex_ti, &mutex_te_tr;
+    std::mutex &mutex_ti, &mutex_tr, &mutex_te;
 
     WINDOW *input_window = nullptr;
     WINDOW *output_window = nullptr;
@@ -31,7 +31,7 @@ class UI {
 
 public:
 
-    UI(float& current_ti, float& current_tr, float& current_te, std::mutex& mutex_ti, std::mutex& mutex_te_tr);
+    UI(float& current_ti, float& current_tr, float& current_te, std::mutex& mutex_ti, std::mutex& mutex_tr, std::mutex& mutex_te);
 
     ~UI();
 

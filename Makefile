@@ -9,11 +9,11 @@ CXXFLAGS = $(CFLAGS) -std=c++14
 LDFLAGS = -lwiringPi -lbcm2835 -lpthread -lncurses
 BUILD_DIR = .
 
-INC_DIR = $(BUILD_DIR)/inc
+INC_DIR = $(BUILD_DIR)/include
 SRC_DIR = $(BUILD_DIR)/src
 OBJ_DIR = $(BUILD_DIR)/obj
 BIN_DIR = $(BUILD_DIR)/bin
-LIBS_DIR = $(BUILD_DIR)/libs
+LIBS_DIR = $(BUILD_DIR)/lib
 
 SRCS = $(wildcard $(SRC_DIR)/*.cc)
 OBJS = $(patsubst $(SRC_DIR)/%.cc, $(OBJ_DIR)/%.o, $(SRCS))
