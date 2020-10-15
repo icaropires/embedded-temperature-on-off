@@ -2,12 +2,12 @@
 
 Control::Control(const std::string &sensor_ti_addr, const std::string &sensor_tr_addr,
     const std::string &sensor_te_addr, uint8_t display_monitor_addr,
-    uint8_t cooler_addr, uint8_t resistor_addr)
+    uint8_t cooler_addr, uint8_t resistor_addr, const std::string& csv_file)
 : sensor_ti(sensor_ti_addr), sensor_tr(sensor_tr_addr),
   sensor_te(sensor_te_addr), display_monitor(display_monitor_addr),
   cooler(cooler_addr), resistor(resistor_addr),
   ui(current_ti, current_tr, current_te, mutex_ti, mutex_te_tr),
-  do_stop(false), has_started(false)
+  do_stop(false), has_started(false), csv_file(csv_file)
 {
 }
 
@@ -23,6 +23,8 @@ void Control::stop() {
 }
 
 void Control::start() {
+    create_csv();
+
     hysteresis = ask_hysteresis();
     bool use_potentiometer = ask_use_potentiometer();
 
@@ -69,13 +71,23 @@ float Control::ask_hysteresis() const {
 }
 
 void Control::schedule() {
+    /* Meant to be called every 500ms */
     /* Same period for applying control and updating temperature */
-
     if (has_started) {
-        apply();
-        ui.print_out();
-        cv_update_temperatures.notify_all();  // Start updating all temperatures at same time
+        return;
     }
+
+    unsigned int save_csv_period = 4;  // Save every 2s
+    save_csv_counter++;
+    if (save_csv_counter == save_csv_period) {
+        cv_csv.notify_one();
+    } else if(save_csv_counter > save_csv_period) {
+        save_csv_counter = 0;
+    }
+
+    apply();
+    ui.print_out();
+    cv_update_temperatures.notify_all();  // Start updating all temperatures at same time
 }
 
 void Control::update_display() {
@@ -118,6 +130,39 @@ void Control::update_te_tr(bool update_tr) {
             std::cerr << "Error when getting data: " << e.what() << std::endl;
         }
         cv_update_temperatures.wait(lock);
+    }
+}
+
+std::string Control::get_datetime_csv() {
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+
+    char datetime[20];  // Ex: 2020-09-22,19:52:31
+    strftime(datetime, sizeof(tm), "%F,%T", &tm);
+
+    return std::string(datetime);
+}
+
+void Control::create_csv() {
+    std::ofstream s_csv_file;
+    s_csv_file.open(csv_file, std::ios::out | std::ios::trunc);
+    s_csv_file << "date,time,temperatura interna,temperatura externa,temperatura de referência" << std::endl;
+    s_csv_file.close();
+}
+
+void Control::update_csv() {
+    std::unique_lock<std::mutex> lock(mutex_csv);
+
+    while (!do_stop) {
+        std::ofstream s_csv_file;
+        s_csv_file.open(csv_file, std::ios::out | std::ios::app);
+
+        std::string datetime = get_datetime_csv();
+        s_csv_file << std::fixed << std::setprecision(2) << std::setfill('0') << datetime << ',' << current_ti << ',' << current_te << ',' << current_tr << std::endl;
+
+        s_csv_file.close();
+
+        cv_csv.wait(lock);
     }
 }
 

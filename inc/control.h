@@ -1,12 +1,15 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
+#include <iomanip>
 #include <atomic>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <csignal>
 #include <stdexcept>
+
 
 #include <unistd.h>
 
@@ -45,13 +48,16 @@ class Control {
 
     std::atomic<bool> do_stop, has_started;
 
-    std::condition_variable cv_update_temperatures;
-    std::mutex mutex_ti, mutex_te_tr, mutex_display;
+    std::condition_variable cv_update_temperatures, cv_csv;
+    std::mutex mutex_ti, mutex_te_tr, mutex_display, mutex_csv;
+
+    std::string csv_file;
+    unsigned int save_csv_counter = 0;
 
  public:
     Control(const std::string &sensor_ti_addr, const std::string &sensor_tr_addr,
         const std::string &sensor_te_addr, uint8_t display_monitor_addr,
-        uint8_t cooler_addr, uint8_t resistor_addr);
+        uint8_t cooler_addr, uint8_t resistor_addr, const std::string& csv_file);
 
     void stop();
 
@@ -63,6 +69,10 @@ class Control {
     bool ask_use_potentiometer() const;
     float ask_hysteresis() const;
 
+    void create_csv();
+    std::string get_datetime_csv();
+
+    void update_csv();
     void update_display();
     void update_ti();
     void update_te_tr(bool update_tr);
