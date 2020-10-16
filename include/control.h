@@ -50,9 +50,10 @@ class Control {
 
     // cv_general for loops which follow same period
     std::condition_variable cv_general, cv_csv;
-    std::mutex mutex_ti, mutex_te, mutex_tr, mutex_display, mutex_csv, mutex_apply;
+    std::mutex mutex_ti, mutex_te, mutex_tr, mutex_uart, mutex_display, mutex_csv, mutex_apply;
 
     std::string csv_file;
+    std::ofstream s_csv_file;
     unsigned int save_csv_counter = 0;
 
  public:

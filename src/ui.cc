@@ -10,6 +10,8 @@ UI::~UI() {}
 
 void UI::stop() {
     do_stop = true;
+    cv_output.notify_all();
+
     usleep(1e5);
     endwin();
 }
@@ -128,9 +130,24 @@ void UI::update_output() {
         std::unique_lock<std::mutex> lock_ui(mutex_ui);
 
         {
-            std::lock_guard<std::mutex> lock_ti(mutex_ti), lock_tr(mutex_tr), lock_te(mutex_te);
+            float ti_aux = -1, te_aux = -1, tr_aux = -1;
+            {
+                std::lock_guard<std::mutex> lock_ti(mutex_ti);
+                ti_aux = current_ti;
 
-            wprintw(output_window, "TE: %0.2f; TI: %0.2f -> TR: %0.2f\n", current_te, current_ti, current_tr);
+            }
+
+            {
+                std::lock_guard<std::mutex> lock_te(mutex_te);
+                te_aux = current_te;
+            }
+
+            {
+                std::lock_guard<std::mutex> lock_tr(mutex_tr);
+                tr_aux = current_tr;
+            }
+
+            wprintw(output_window, "TE: %0.2f; TI: %0.2f -> TR: %0.2f\n", te_aux, ti_aux, tr_aux);
             wrefresh(output_window);
         }
 
