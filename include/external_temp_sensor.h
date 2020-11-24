@@ -25,6 +25,7 @@ class ExternalTempSensor : public Sensor {
 
     struct identifier id;
     struct bme280_dev dev;
+    uint32_t delay;
 
     std::string device_path;
 

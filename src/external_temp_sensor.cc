@@ -21,10 +21,13 @@ ExternalTempSensor::ExternalTempSensor(const std::string& device_path) : device_
 
     int8_t result = bme280_init(&dev);
     if (result != BME280_OK) {
-        throw std::runtime_error("Failed to initialize the device. Error code = " + result);
+        std::string msg = "Failed to initialize the device. Error code = " + std::to_string(result);
+        throw std::runtime_error(msg);
     }
 
     setup();
+
+    delay = bme280_cal_meas_delay(&dev.settings);
 }
 
 ExternalTempSensor::~ExternalTempSensor() {
@@ -32,16 +35,21 @@ ExternalTempSensor::~ExternalTempSensor() {
 }
 
 float ExternalTempSensor::get_next() {
+    usleep(2e5);  // Getting BME280_E_COMM_FAIL when setting mode not using this
+
     int8_t result = bme280_set_sensor_mode(BME280_FORCED_MODE, &dev);
     if (result != BME280_OK) {
-        throw std::runtime_error("Failed to set sensor mode. Error code =" + result);
+        std::string msg = "Failed to set sensor mode. Error code = " + std::to_string(result);
+        throw std::runtime_error(msg);
     }
 
-    struct bme280_data data;
+    dev.delay_us(delay, dev.intf_ptr);
 
+    struct bme280_data data;
     result = bme280_get_sensor_data(BME280_ALL, &data, &dev);
     if (result != BME280_OK){
-        throw std::runtime_error("Failed to get sensor data. Error code =" + result);
+        std::string msg = "Failed to get sensor data. Error code = " + std::to_string(result);
+        throw std::runtime_error(msg);
     }
 
     float temp = -1.0;
@@ -71,16 +79,9 @@ void ExternalTempSensor::setup() {
     // Set the sensor settings
     int8_t result = bme280_set_sensor_settings(settings_sel, &dev);
     if (result != BME280_OK) {
-        throw std::runtime_error( "Failed to set sensor settings. Error code = " + result);
+        std::string msg = "Failed to set sensor settings. Error code = " + std::to_string(result);
+        throw std::runtime_error(msg);
     }
-
-    result = bme280_set_sensor_mode(BME280_FORCED_MODE, &dev);
-    if (result != BME280_OK) {
-        throw std::runtime_error("Failed to set sensor mode. Error code = " + result);
-    }
-
-    uint32_t delay = 4e4;  // If less, it gives always 22.1504
-    dev.delay_us(delay, dev.intf_ptr);
 }
 
 void ExternalTempSensor::user_delay_us(uint32_t period, void *intf_ptr) {

@@ -18,7 +18,8 @@ UARTSensor::~UARTSensor() {
 void UARTSensor::setup(){
     struct termios options;
     tcgetattr(serial, &options);
-    options.c_cflag = B115200 | CS8 | CLOCAL | CREAD;
+    // options.c_cflag = B115200 | CS8 | CLOCAL | CREAD;
+    options.c_cflag = B9600 | CS8 | CLOCAL | CREAD;
     options.c_iflag = IGNPAR;
     options.c_oflag = 0;
     options.c_lflag = 0;
@@ -54,7 +55,7 @@ ssize_t UARTSensor::read_data(void *buff, int expected_size){
 
 ssize_t UARTSensor::request_data(char code, void *buff, int expected_size){
     write_code(code);
-    usleep(1e5);
+    usleep(1e6);
     ssize_t len = read_data(buff, expected_size);
 
     return len;
